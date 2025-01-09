@@ -1,10 +1,12 @@
 import google.generativeai as genai
+import os
 import streamlit as st
 from langchain.prompts import PromptTemplate
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 
-# Fetch API Key securely from Streamlit secrets
+# Fetch API Key securely from environment variables (if using Streamlit secrets, replace this with st.secrets)
+# GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 genai.configure(api_key=GOOGLE_API_KEY)
 
@@ -42,4 +44,7 @@ def get_response_from_gemini(user_input):
 # Streamlit input field to get user questions
 user_input = st.text_input("Enter your farming-related question:")
 
-# Display
+# Display response when user inputs a question
+if user_input:
+    output = get_response_from_gemini(user_input)
+    st.write(f"Response: {output}")
