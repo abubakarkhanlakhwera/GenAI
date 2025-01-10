@@ -41,8 +41,24 @@ memory = ConversationBufferMemory(memory_key="chat_history", return_messages=Tru
 # Initialize the Gemini Model
 model = genai.GenerativeModel('gemini-1.5-flash')
 
+# Helper function to check if the user input is farming-related
+def is_farming_related(user_input):
+    # Define keywords related to farming
+    farming_keywords = [
+        "sugarcane", "farming", "agriculture", "crops", "irrigation",
+        "fertilizer", "pests", "harvesting", "soil", "planting", "yield"
+    ]
+    # Check if any keyword is present in the user input
+    return any(keyword in user_input.lower() for keyword in farming_keywords)
+
 # Custom function to interact with Gemini through LangChain
 def get_response_from_gemini(user_input):
+    # Check for general-purpose chatbot trigger words
+    general_chatbot_trigger = any(name in user_input.lower() for name in ["nadeem", "nadeem khan", "nadeem khan lakhwera", "nadeem basheer"])
+    
+    if not general_chatbot_trigger and not is_farming_related(user_input):
+        return "I'm sorry, but I can only answer farming-related questions. Please ask me about sugarcane farming!"
+    
     # Prepare prompt with user input
     full_prompt = prompt.format(user_input=user_input)
 
