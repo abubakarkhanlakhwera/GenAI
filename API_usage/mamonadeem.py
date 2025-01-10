@@ -5,7 +5,7 @@ from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 import random
 
-# Generate random pastel colors for user interface elements
+# Helper function for generating random pastel colors
 def generate_random_color():
     colors = ["#FFB6C1", "#ADD8E6", "#90EE90", "#FFDAB9", "#E6E6FA", "#FFFACD", "#D3D3D3"]
     return random.choice(colors)
@@ -14,90 +14,102 @@ def generate_random_color():
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# Streamlit title and instructions
-st.title('Nadeem Khan Lakhwera (SRDB) Chatbot')
-st.subheader("Welcome! Get expert advice on sugarcane farming from Bahawalpur, Punjab, Pakistan.")
-
+# Streamlit app title and introduction
+st.title('Nadeem Khan Lakhwera Farming Chatbot')
 st.markdown("""
-**How to use the chatbot:**
-1. Enter your farming-related question.
-2. Press **Submit** to get advice.
-3. Ask as many questions as you like!
+Welcome! I am **Nadeem Khan Lakhwera**, specializing in **farming advice** for Punjab, Pakistan. While my expertise is sugarcane farming, I can help with broader agricultural topics too!
+
+**How to use:**
+- Enter your farming question.
+- Click **Submit** to get advice.
+- Keep asking questions for more detailed assistance.
 """)
 
-# Define prompt template for focused farming advice
-template = """
-You are an expert in sugarcane farming from Bahawalpur, Punjab, Pakistan. You work for the Sugarcane Research and Development Board (SRDB). 
-Provide clear, formal, and easy-to-understand advice about sugarcane farming. 
+# Define the prompt template for farming-related advice
+prompt_template = """
+You are an expert in farming from Bahawalpur, Punjab, Pakistan. You work for the Sugarcane Research and Development Board (SRDB) but can provide advice on other types of farming as well.
+Keep your responses simple and formal for clarity. Your name is Nadeem Khan Lakhwera.
 
 User's input: {user_input}
 """
 
-# Set up LangChain's conversation memory
-prompt = PromptTemplate(input_variables=["user_input"], template=template)
+prompt = PromptTemplate(input_variables=["user_input"], template=prompt_template)
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-# Initialize the Gemini Model
+# Initialize the model
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Check if user input is farming-related
+# Function to check if the input is related to farming
 def is_farming_related(user_input):
-    keywords = ["sugarcane", "farming", "agriculture", "crops", "irrigation", "fertilizer", "pests", "harvesting", "soil", "planting", "yield"]
-    return any(keyword in user_input.lower() for keyword in keywords)
+    farming_keywords = ["farming", "agriculture", "crops", "irrigation", "fertilizer", "pests", "harvesting", "soil", "planting", "yield", "livestock", "climate"]
+    return any(keyword in user_input.lower() for keyword in farming_keywords)
 
-# Get response from Gemini
+# Get model response function
 def get_response(user_input):
     if not is_farming_related(user_input):
-        return "I'm sorry, I can only answer farming-related questions. Please ask about sugarcane farming."
-    
-    full_prompt = prompt.format(user_input=user_input)
-    response = model.generate_content(full_prompt)
+        return "I'm here to help with farming-related questions. Please ask about agriculture, crops, or related topics!"
+    response_prompt = prompt.format(user_input=user_input)
+    response = model.generate_content(response_prompt)
     return response.text
 
-# Session state for conversation history
+# Conversation History Initialization
 if "conversation_history" not in st.session_state:
     st.session_state.conversation_history = []
 
-# UI for Chatbot input and display
-with st.form(key="input_form", clear_on_submit=True):
-    user_input = st.text_input("Enter your farming-related question:", key="user_input", max_chars=2000)
-    submit_button = st.form_submit_button("Submit")
-
-if submit_button:
-    if user_input:
-        output = get_response(user_input)
-        st.session_state.conversation_history.append({"user": user_input, "response": output})
-    else:
-        st.warning("Please enter a question before submitting.")
-
-# Display conversation history
-for message in st.session_state.conversation_history:
-    user_color = generate_random_color()
-    bot_color = generate_random_color()
-
-    st.markdown(f'<div class="chat-bubble" style="background-color: {user_color};"><strong>You:</strong> {message["user"]}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="chat-bubble" style="background-color: {bot_color};"><strong>Nadeem Khan Lakhwera:</strong> {message["response"]}</div>', unsafe_allow_html=True)
-
-# Clear conversation history
-if st.button("Clear Conversation"):
-    st.session_state.conversation_history = []
-    st.experimental_rerun()
-
-# UI enhancements
+# Chat UI Layout
 st.markdown("""
 <style>
-.chat-bubble {
+.chat-bubble-user {
+    background-color: #d1e7dd;
     padding: 10px;
-    border-radius: 15px;
-    margin-bottom: 10px;
+    border-radius: 10px;
+    margin-bottom: 5px;
+    text-align: left;
+    color: #0f5132;
     font-size: 16px;
-} 
-input[type="text"] {
-    border: 1px solid #ccc;
+}
+.chat-bubble-bot {
+    background-color: #e2e3e5;
     padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 5px;
+    text-align: left;
+    color: #495057;
+    font-size: 16px;
+}
+.input-container {
+    position: fixed;
+    bottom: 0;
     width: 100%;
-    border-radius: 4px;
-    box-sizing: border-box;
+    background-color: white;
+    padding: 10px 0;
+}
+.chat-container {
+    max-height: 70vh;
+    overflow-y: auto;
 }
 </style>
 """, unsafe_allow_html=True)
+
+# User Input and Submit Form
+with st.form(key="input_form", clear_on_submit=True):
+    user_input = st.text_input("Enter your farming-related question:", max_chars=2000)
+    submit_button = st.form_submit_button("Submit")
+
+# Handling User Input
+if submit_button and user_input:
+    response = get_response(user_input)
+    st.session_state.conversation_history.append({"user": user_input, "response": response})
+
+# Displaying Conversation History
+if st.session_state.conversation_history:
+    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+    for chat in st.session_state.conversation_history:
+        st.markdown(f'<div class="chat-bubble-user"><strong>You:</strong> {chat["user"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="chat-bubble-bot"><strong>Nadeem Khan Lakhwera:</strong> {chat["response"]}</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Clear Conversation Button
+if st.button("Clear Conversation"):
+    st.session_state.conversation_history = []
+    st.experimental_rerun()
