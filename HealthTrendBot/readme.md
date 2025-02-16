@@ -24,10 +24,3 @@
 - [Pandas](https://pandas.pydata.org)
 - [Plotly](https://plotly.com/python/)
 
-## Installation
-
-1. **Clone the Repository:**
-
-   ```bash
-   git clone <repository_url>
-   cd <repository_directory>
